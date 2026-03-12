@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import useSupabaseSync from "../hooks/useSupabaseSync";
+import { T, PALETTE, STAGES, uid, dKey, stickyCorners, stickyTilt } from "../tokens";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -9,35 +10,10 @@ const MONTHS   = ["January","February","March","April","May","June","July","Augu
 const MONTHS_S = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const DAYS_S   = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
 const DAYS_L   = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-const uid     = () => Math.random().toString(36).slice(2,9);
-const dKey    = (y,m,d) => `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
 const getDIM  = (y,m)   => new Date(y,m+1,0).getDate();
 const getFirst= (y,m)   => new Date(y,m,1).getDay();
 const TODAY   = new Date();
 const TODAY_K = dKey(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
-
-// Candy palette — bg + hard shadow colour
-const PALETTE = [
-  { bg:"#FFE566", sh:"#C9A800" },
-  { bg:"#FF6EB4", sh:"#C4006A" },
-  { bg:"#5FE0C0", sh:"#009E7A" },
-  { bg:"#FF8C5A", sh:"#C44A00" },
-  { bg:"#A87EFA", sh:"#5B10D6" },
-  { bg:"#5CC8FF", sh:"#007DC4" },
-  { bg:"#B8F240", sh:"#6A9B00" },
-  { bg:"#FF5C5C", sh:"#B80000" },
-];
-
-const STAGES = [
-  { id:"discovery",   label:"Discovery",   color:"#5CC8FF", sh:"#007DC4", icon:"🔍" },
-  { id:"research",    label:"Research",    color:"#B8F240", sh:"#6A9B00", icon:"📊" },
-  { id:"synthesis",   label:"Synthesis",   color:"#FF8C5A", sh:"#C44A00", icon:"🧩" },
-  { id:"ideation",    label:"Ideation",    color:"#FF6EB4", sh:"#C4006A", icon:"💡" },
-  { id:"prototyping", label:"Prototyping", color:"#A87EFA", sh:"#5B10D6", icon:"🛠"  },
-  { id:"testing",     label:"Testing",     color:"#FFE566", sh:"#C9A800", icon:"🧪" },
-  { id:"handoff",     label:"Handoff",     color:"#B8F240", sh:"#6A9B00", icon:"📦" },
-  { id:"launch",      label:"Launch",      color:"#FF6EB4", sh:"#C4006A", icon:"🚀" },
-];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TEMPLATE PACKS
@@ -87,44 +63,8 @@ const TEMPLATE_PACKS = [
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TYPE RAMP
-// T1 11px  — body text, textarea input, card text
-// T2  9px  — labels, stage tags, button text
-// T3 7.5px — secondary labels, dot labels, keyboard hints
-// T4 6.5px — micro labels, stage chips on cards
-// Display  — Archivo Black (titles, CTAs, day names)
-// Body     — Playfair Display (everything else)
+// Typography, colors, sticky helpers, localStorage — all imported from tokens
 // ─────────────────────────────────────────────────────────────────────────────
-const T = {
-  display: "'Archivo Black',sans-serif",
-  body:    "'Playfair Display',serif",
-  t1: "11px",
-  t2: "9px",
-  t3: "7.5px",
-  t4: "6.5px",
-};
-// ─────────────────────────────────────────────────────────────────────────────
-// STICKY NOTE VISUAL HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
-// Sharp corners — 0px mostly, occasional 1px
-function stickyCorners(id) {
-  const c = (id||"zzz").split("").map(x=>x.charCodeAt(0));
-  const v = (i) => (c[i%c.length] % 4 === 0) ? "1px" : "0px";
-  return `${v(0)} ${v(1)} ${v(2)} ${v(3)}`;
-}
-
-// Deterministic tilt -3.5° to +3.5°
-function stickyTilt(id, index) {
-  const seed = ((id||"a").charCodeAt(0) * 13 + index * 97) % 140;
-  return (seed - 70) / 20;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// LOCALSTORAGE
-// ─────────────────────────────────────────────────────────────────────────────
-const LS = { notes:"sw3_notes", dl:"sw3_dl", inbox:"sw3_inbox" };
-const load = (k,fb) => { try { const v=localStorage.getItem(k); return v?JSON.parse(v):fb; } catch { return fb; } };
-const save = (k,v)  => { try { localStorage.setItem(k,JSON.stringify(v)); } catch {} };
 
 const INIT_NOTES = { [TODAY_K]: [
   { id:uid(), text:"Sprint planning",    color:"#FFE566", done:false },
