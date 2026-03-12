@@ -18,16 +18,12 @@ export default function useSupabaseSync(initNotes, initInbox) {
   const [inbox, setInbox] = useState(null);
   const [loaded, setLoaded] = useState(false);
 
-  // Track whether initial load has set state, to avoid saving back on mount
   const initialLoadDone = useRef(false);
-
-  // Debounce timers
   const notesTimer = useRef(null);
   const dlTimer = useRef(null);
   const inboxTimer = useRef(null);
   const userIdRef = useRef(null);
 
-  // Load from Supabase on mount
   useEffect(() => {
     let cancelled = false;
 
@@ -36,11 +32,10 @@ export default function useSupabaseSync(initNotes, initInbox) {
         data: { user },
       } = await supabase.auth.getUser();
       if (cancelled || !user) {
-        // No user — fall back to localStorage
         if (!cancelled) {
-          setNotes(loadLocal(LS.notes, initNotes));
-          setDeadlines(loadLocal(LS.dl, {}));
-          setInbox(loadLocal(LS.inbox, initInbox));
+          setNotes(loadLocal(LS.notes, null) || initNotes);
+          setDeadlines(loadLocal(LS.dl, null) || {});
+          setInbox(loadLocal(LS.inbox, null) || initInbox);
           setLoaded(true);
           initialLoadDone.current = true;
         }
@@ -59,35 +54,33 @@ export default function useSupabaseSync(initNotes, initInbox) {
 
       if (error) {
         console.error("Supabase load error:", error);
+        setNotes(loadLocal(LS.notes, null) || initNotes);
+        setDeadlines(loadLocal(LS.dl, null) || {});
+        setInbox(loadLocal(LS.inbox, null) || initInbox);
+        setLoaded(true);
+        initialLoadDone.current = true;
+        return;
       }
 
-      if (data && (data.notes || data.deadlines || data.inbox)) {
-        // Use Supabase data
-        setNotes(data.notes ?? loadLocal(LS.notes, initNotes));
-        setDeadlines(data.deadlines ?? loadLocal(LS.dl, {}));
-        setInbox(data.inbox ?? loadLocal(LS.inbox, initInbox));
-      } else {
-        // No Supabase row yet — migrate from localStorage
-        const localNotes = loadLocal(LS.notes, initNotes);
-        const localDl = loadLocal(LS.dl, {});
-        const localInbox = loadLocal(LS.inbox, initInbox);
+      const finalNotes = (data && data.notes) || loadLocal(LS.notes, null) || initNotes;
+      const finalDl = (data && data.deadlines) || loadLocal(LS.dl, null) || {};
+      const finalInbox = (data && data.inbox) || loadLocal(LS.inbox, null) || initInbox;
 
-        setNotes(localNotes);
-        setDeadlines(localDl);
-        setInbox(localInbox);
+      setNotes(finalNotes);
+      setDeadlines(finalDl);
+      setInbox(finalInbox);
+      setLoaded(true);
 
-        // Persist localStorage data to Supabase
+      if (!data || !data.notes) {
         await supabase.from("user_data").upsert({
           id: user.id,
-          notes: localNotes,
-          deadlines: localDl,
-          inbox: localInbox,
+          notes: finalNotes,
+          deadlines: finalDl,
+          inbox: finalInbox,
           updated_at: new Date().toISOString(),
         });
       }
 
-      setLoaded(true);
-      // Small delay so the first render with data doesn't trigger save
       setTimeout(() => {
         initialLoadDone.current = true;
       }, 0);
@@ -99,7 +92,6 @@ export default function useSupabaseSync(initNotes, initInbox) {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Debounced save helper
   const saveToSupabase = useCallback((field, value, timerRef) => {
     if (!initialLoadDone.current || !userIdRef.current) return;
 
@@ -114,7 +106,6 @@ export default function useSupabaseSync(initNotes, initInbox) {
     }, 500);
   }, []);
 
-  // Watch for changes and debounce-save
   useEffect(() => {
     if (notes === null) return;
     saveToSupabase("notes", notes, notesTimer);

@@ -1289,15 +1289,17 @@ export default function StudioWall() {
 
   // Auto-roll yesterday's undone notes → today
   useEffect(()=>{
+    if(!sbLoaded) return;
     const yd=new Date(TODAY); yd.setDate(yd.getDate()-1);
     const yk=dKey(yd.getFullYear(),yd.getMonth(),yd.getDate());
     setNotes(prev=>{
+      if(!prev) return prev;
       const yn=(prev[yk]||[]).filter(n=>!n.done); if(!yn.length) return prev;
       const tn=prev[TODAY_K]||[]; const ex=new Set(tn.map(n=>n.text));
       const mv=yn.filter(n=>!ex.has(n.text)); if(!mv.length) return prev;
       return {...prev,[yk]:(prev[yk]||[]).filter(n=>n.done),[TODAY_K]:[...tn,...mv.map(n=>({...n,id:uid()}))]};
     });
-  },[]);
+  },[sbLoaded]);
 
   // ── Drop ─────────────────────────────────────────────────────────────────
   function dropToInbox(info) {
