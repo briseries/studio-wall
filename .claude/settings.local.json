@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//usr/local/bin/**)",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//Users/brianwong/Projects/studio-wall/$HOME/.volta/bin/**)",
+      "Read(//Users/brianwong/Projects/studio-wall/$HOME/.nvm/versions/node/*/bin/**)",
+      "Bash(git init:*)"
+    ]
+  }
+}
