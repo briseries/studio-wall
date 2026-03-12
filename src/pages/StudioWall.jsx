@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { supabase } from "../lib/supabase";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -1815,6 +1816,9 @@ export default function StudioWall() {
         <button className="pill" onClick={()=>{ setBackupModal("import"); setImportText(""); setCopyLabel("COPY"); }}
           style={{borderColor:"rgba(168,126,250,0.25)",color:"rgba(168,126,250,0.55)",
             background:"rgba(14,12,26,0.9)",backdropFilter:"blur(12px)"}}>↑ Import</button>
+        <button className="pill" onClick={()=>supabase.auth.signOut()}
+          style={{borderColor:"rgba(255,92,92,0.25)",color:"rgba(255,92,92,0.55)",
+            background:"rgba(14,12,26,0.9)",backdropFilter:"blur(12px)"}}>Sign out</button>
       </div>
 
       {/* INBOX */}
