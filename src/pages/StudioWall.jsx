@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import useSupabaseSync from "../hooks/useSupabaseSync";
-import { T, PALETTE, STAGES, uid, dKey, stickyCorners, stickyTilt } from "../tokens";
+import { T, PALETTE, STAGES, LS, uid, dKey, save, stickyCorners, stickyTilt } from "../tokens";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
