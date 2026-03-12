@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import useSupabaseSync from "../hooks/useSupabaseSync";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -1255,9 +1256,7 @@ export default function StudioWall() {
   const [month, setMonth] = useState(TODAY.getMonth());
   const [view,  setView]  = useState("month");
 
-  const [notes,     setNotes]     = useState(()=>load(LS.notes, INIT_NOTES));
-  const [deadlines, setDeadlines] = useState(()=>load(LS.dl,    {}));
-  const [inbox,     setInbox]     = useState(()=>load(LS.inbox, INIT_INBOX));
+  const { notes, deadlines, inbox, setNotes, setDeadlines, setInbox, loaded: sbLoaded } = useSupabaseSync(INIT_NOTES, INIT_INBOX);
 
   const [dlModal,       setDlModal]       = useState(null);
   const [noteModal,     setNoteModal]     = useState(null);
@@ -1607,6 +1606,14 @@ export default function StudioWall() {
       </div>
     );
   }
+
+  // ── LOADING ──────────────────────────────────────────────────────────────
+  if(!sbLoaded || !notes || !deadlines || !inbox) return (
+    <div style={{minHeight:"100vh",background:"#0e0e12",display:"flex",alignItems:"center",
+      justifyContent:"center",fontFamily:"'Archivo Black',sans-serif",color:"rgba(255,255,255,0.3)",fontSize:14}}>
+      Loading&hellip;
+    </div>
+  );
 
   // ── RENDER ────────────────────────────────────────────────────────────────
   return (

@@ -83,6 +83,20 @@ export default function AuthPage() {
           </button>
         </form>
 
+        <div style={styles.divider}>
+          <span style={styles.dividerLine} />
+          <span style={styles.dividerText}>or</span>
+          <span style={styles.dividerLine} />
+        </div>
+
+        <button
+          type="button"
+          style={styles.googleBtn}
+          onClick={() => supabase.auth.signInWithOAuth({ provider: "google" })}
+        >
+          Sign in with Google
+        </button>
+
         <p style={styles.toggle}>
           {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
           <span
@@ -168,5 +182,32 @@ const styles = {
     color: "#A87EFA",
     cursor: "pointer",
     textDecoration: "underline",
+  },
+  divider: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    margin: "20px 0",
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    background: "rgba(255,255,255,0.1)",
+  },
+  dividerText: {
+    fontFamily: T.body,
+    fontSize: 12,
+    color: "rgba(255,255,255,0.3)",
+  },
+  googleBtn: {
+    fontFamily: T.display,
+    fontSize: 13,
+    padding: "12px 0",
+    borderRadius: 10,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.05)",
+    color: "#fff",
+    cursor: "pointer",
+    width: "100%",
   },
 };
