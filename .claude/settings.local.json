@@ -5,7 +5,15 @@
       "Read(//opt/homebrew/bin/**)",
       "Read(//Users/brianwong/Projects/studio-wall/$HOME/.volta/bin/**)",
       "Read(//Users/brianwong/Projects/studio-wall/$HOME/.nvm/versions/node/*/bin/**)",
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "Bash(git clone:*)",
+      "Read(//Users/brianwong/.claude/skills/gstack/**)",
+      "Bash(./setup)",
+      "Bash(curl -fsSL https://bun.sh/install)",
+      "Bash(bash)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
