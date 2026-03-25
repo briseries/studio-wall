@@ -17,11 +17,9 @@ export default function StickyNote({
   const fsize = size==="lg" ? T.t1 : size==="sm" ? T.t2 : T.t1;
   const lh    = size==="sm" ? 1.4 : 1.5;
 
-  const cardBg = color;
-
   const shadow = selected
     ? `0 0 0 1.5px #fff, 0 0 0 3.5px #FF6EB4, 0 12px 40px rgba(0,0,0,0.6)`
-    : `0 4px 20px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.12) inset`;
+    : `0 4px 20px rgba(0,0,0,0.45)`;
 
   return (
     <div
@@ -53,46 +51,23 @@ export default function StickyNote({
         touchAction:"manipulation",
         position:"relative",
         overflow:"hidden",
+        // Single glass effect: dark base + color bloom + subtle top-highlight
         backgroundColor: "#0e0c1a",
         backgroundImage: `
+          linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 40%),
           radial-gradient(ellipse 90% 80% at 50% 50%,
-            ${cardBg}55 0%,
-            ${cardBg}22 45%,
+            ${color}44 0%,
+            ${color}18 45%,
             transparent 70%
-          ),
-          linear-gradient(135deg,
-            rgba(255,255,255,0.06) 0%,
-            transparent 40%,
-            rgba(0,0,0,0.3) 100%
           )
         `,
-        border: `1px solid rgba(255,255,255,0.22)`,
+        // Left-accent color border — the candy stripe that identifies the card
+        borderLeft: `3px solid ${color}`,
+        borderTop: "1px solid rgba(255,255,255,0.1)",
+        borderRight: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: "1px solid rgba(255,255,255,0.04)",
       }}
     >
-      {/* TOP-LEFT corner shine */}
-      <div style={{
-        position:"absolute", top:"-8px", left:"-8px",
-        width:"32px", height:"32px",
-        background:"radial-gradient(circle, rgba(255,255,255,0.55) 0%, transparent 70%)",
-        pointerEvents:"none",
-        borderRadius:"50%",
-      }}/>
-      {/* BOTTOM-RIGHT corner shine */}
-      <div style={{
-        position:"absolute", bottom:"-10px", right:"-10px",
-        width:"28px", height:"28px",
-        background:"radial-gradient(circle, rgba(255,255,255,0.25) 0%, transparent 70%)",
-        pointerEvents:"none",
-        borderRadius:"50%",
-      }}/>
-      {/* inner border glow */}
-      <div style={{
-        position:"absolute", inset:"0",
-        borderRadius: corners,
-        boxShadow:"inset 0 0 0 1px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.3)",
-        pointerEvents:"none",
-      }}/>
-
       {showStage && st && (
         <div style={{fontSize:T.t3,fontWeight:700,letterSpacing:"2px",
           color:"rgba(255,255,255,0.45)",marginBottom:"5px",textTransform:"uppercase",

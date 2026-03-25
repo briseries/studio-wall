@@ -53,6 +53,27 @@ export const BG = {
   cellBorder:   "rgba(255,255,255,0.06)",
 };
 
+// ── Glass Surfaces ──────────────────────────────────────────────────────────
+export const GLASS = {
+  nav: {
+    background: "rgba(14,12,26,0.92)",
+    backdropFilter: "blur(24px)",
+    WebkitBackdropFilter: "blur(24px)",
+    borderBottom: "1px solid rgba(255,255,255,0.07)",
+  },
+  inbox: {
+    background: "rgba(14,12,26,0.78)",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+    borderBottom: "1px solid rgba(255,255,255,0.06)",
+  },
+  modal: {
+    background: "rgba(3,2,10,0.85)",
+    backdropFilter: "blur(28px)",
+    WebkitBackdropFilter: "blur(28px)",
+  },
+};
+
 // ── Stages ────────────────────────────────────────────────────────────────────
 export const STAGES = [
   { id: "discovery",   label: "Discovery",   color: COLORS.blue.base,   shadow: COLORS.blue.shadow,   icon: "🔍" },
