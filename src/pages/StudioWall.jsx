@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import useSupabaseSync from "../hooks/useSupabaseSync";
-import { T, PALETTE, STAGES, LS, uid, dKey, save, stickyCorners, stickyTilt } from "../tokens";
+import { T, PALETTE, STAGES, LS, GLASS, RAINBOW, uid, dKey, save, stickyCorners, stickyTilt } from "../tokens";
+import StickyNote from "../components/StickyNote";
+import CommandPalette from "../components/CommandPalette";
+import FocusCard from "../components/FocusCard";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -77,141 +80,6 @@ const INIT_INBOX = [
   { id:uid(), text:"Concept sketches",   stage:"ideation",   priority:"" },
   { id:uid(), text:"Lo-fi wireframes",   stage:"prototyping",priority:"High" },
 ];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// STICKY NOTE COMPONENT
-// ─────────────────────────────────────────────────────────────────────────────
-function StickyNote({
-  id, text, color, done=false, stage, priority,
-  tilt=0, size="md",
-  selected=false,
-  draggable: isDraggable=true,
-  onDragStart, onDragEnd,
-  onClick,
-  showStage=false,
-}) {
-  const pal  = PALETTE.find(p=>p.bg===color)||PALETTE[0];
-  const st   = stage ? STAGES.find(s=>s.id===stage) : null;
-  const corners = stickyCorners(id);
-
-  const pad   = size==="lg" ? "14px 16px 16px" : size==="sm" ? "6px 7px 7px" : "9px 10px 11px";
-  const fsize = size==="lg" ? T.t1 : size==="sm" ? T.t2 : T.t1;
-  const lh    = size==="sm" ? 1.4 : 1.5;
-
-  // Dark iridescent base from the color — mix toward dark
-  const cardBg = color;
-
-  const shadow = selected
-    ? `0 0 0 1.5px #fff, 0 0 0 3.5px #FF6EB4, 0 12px 40px rgba(0,0,0,0.6)`
-    : `0 4px 20px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.12) inset`;
-
-  return (
-    <div
-      draggable={isDraggable}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onClick={onClick}
-      className="note-card"
-      style={{
-        "--tilt": `${tilt}deg`,
-        borderRadius: corners,
-        padding: pad,
-        fontSize: fsize,
-        fontFamily:T.body,
-        fontWeight: 700,
-        fontStyle: "normal",
-        color: "#fff",
-        cursor: isDraggable ? "grab" : "pointer",
-        userSelect:"none",
-        WebkitUserSelect:"none",
-        boxShadow: shadow,
-        transform: selected
-          ? `rotate(${tilt*0.3}deg) scale(1.06)`
-          : `rotate(${tilt}deg)`,
-        transition:"transform 0.15s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.15s, opacity 0.15s",
-        opacity: done ? 0.35 : 1,
-        textDecoration: done ? "line-through" : "none",
-        lineHeight: lh,
-        touchAction:"manipulation",
-        position:"relative",
-        overflow:"hidden",
-        // Dark iridescent card: deep dark base + color bloom in center
-        backgroundColor: "#0e0c1a",
-        backgroundImage: `
-          radial-gradient(ellipse 90% 80% at 50% 50%,
-            ${cardBg}55 0%,
-            ${cardBg}22 45%,
-            transparent 70%
-          ),
-          linear-gradient(135deg,
-            rgba(255,255,255,0.06) 0%,
-            transparent 40%,
-            rgba(0,0,0,0.3) 100%
-          )
-        `,
-        border: `1px solid rgba(255,255,255,0.22)`,
-      }}
-    >
-      {/* TOP-LEFT corner shine — bright white spot */}
-      <div style={{
-        position:"absolute", top:"-8px", left:"-8px",
-        width:"32px", height:"32px",
-        background:"radial-gradient(circle, rgba(255,255,255,0.55) 0%, transparent 70%)",
-        pointerEvents:"none",
-        borderRadius:"50%",
-      }}/>
-      {/* BOTTOM-RIGHT corner shine — softer */}
-      <div style={{
-        position:"absolute", bottom:"-10px", right:"-10px",
-        width:"28px", height:"28px",
-        background:"radial-gradient(circle, rgba(255,255,255,0.25) 0%, transparent 70%)",
-        pointerEvents:"none",
-        borderRadius:"50%",
-      }}/>
-      {/* inner border glow */}
-      <div style={{
-        position:"absolute", inset:"0",
-        borderRadius: corners,
-        boxShadow:"inset 0 0 0 1px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.3)",
-        pointerEvents:"none",
-      }}/>
-
-      {showStage && st && (
-        <div style={{fontSize:T.t3,fontWeight:700,letterSpacing:"2px",
-          color:"rgba(255,255,255,0.45)",marginBottom:"5px",textTransform:"uppercase",
-          fontFamily:T.body}}>
-          {st.icon} {st.label}
-        </div>
-      )}
-
-      <span style={{
-        position:"relative", zIndex:1,
-        textShadow:"0 1px 4px rgba(0,0,0,0.5)",
-      }}>{text}</span>
-
-      {priority==="High" && (
-        <span style={{display:"inline-block",marginLeft:"5px",fontSize:T.t4,
-          background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",
-          padding:"1px 4px",fontFamily:T.body,
-          fontWeight:700,letterSpacing:"1px",verticalAlign:"middle",color:"rgba(255,255,255,0.7)"}}>
-          HIGH
-        </span>
-      )}
-
-      {done && (
-        <div style={{fontSize:T.t3,marginTop:"3px",opacity:0.55,fontWeight:700,
-          fontFamily:T.body,letterSpacing:"1px"}}>✓ DONE</div>
-      )}
-
-      {selected && (
-        <div style={{position:"absolute",inset:0,
-          border:"2px solid rgba(255,110,180,0.8)",
-          borderRadius:corners,pointerEvents:"none",
-          boxShadow:"inset 0 0 12px rgba(255,110,180,0.2)"}}/>
-      )}
-    </div>
-  );
-}
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -728,6 +596,7 @@ function DayFocusOverlay({ dateKey, initialIdx=null, notes: initNotes, deadlines
   const [dragOver,     setDragOver]     = useState(null);
   const [ejecting,     setEjecting]     = useState(false);
   const [tagsOpen,     setTagsOpen]     = useState(false);
+  const [composerOpen, setComposerOpen] = useState(true); // hide after deleting last note
   const draggingIdx    = useRef(null);
   const inputRef       = useRef();
   useEffect(()=>{ setTimeout(()=>{ inputRef.current?.focus(); if(resolvedIdx!==null) inputRef.current?.select(); },60); },[]);
@@ -741,16 +610,23 @@ function DayFocusOverlay({ dateKey, initialIdx=null, notes: initNotes, deadlines
   const dateLabel  = `${MONTHS_S[dm-1]} ${dd}`;
 
   // Flush current editor text into the notes array (used when switching cards)
-  function flushCurrent() {
+  // selectAfterAdd: if true, auto-select the newly added card (default true)
+  function flushCurrent(selectAfterAdd = true) {
     if (!text.trim()) return;
-    setNotes(prev => {
-      if (editingIdx !== null) {
-        return prev.map((n, i) => i === editingIdx
-          ? { ...n, text: text.trim(), stage, priority, color: activeStage.color, done }
-          : n);
-      }
-      return [...prev, { id: uid(), text: text.trim(), stage, priority, color: activeStage.color, done: false }];
-    });
+    if (editingIdx !== null) {
+      setNotes(prev => prev.map((n, i) => i === editingIdx
+        ? { ...n, text: text.trim(), stage, priority, color: activeStage.color, done }
+        : n));
+    } else {
+      // New note — add it to the array
+      setNotes(prev => {
+        if (selectAfterAdd) {
+          const newIdx = prev.length;
+          setTimeout(() => setEditingIdx(newIdx), 0);
+        }
+        return [...prev, { id: uid(), text: text.trim(), stage, priority, color: activeStage.color, done: false }];
+      });
+    }
   }
 
   // Save on close — imperative, reads current closure values directly
@@ -776,14 +652,27 @@ function DayFocusOverlay({ dateKey, initialIdx=null, notes: initNotes, deadlines
     const n = notes[idx];
     setText(n.text); setStage(n.stage||"discovery");
     setPriority(n.priority||""); setDone(n.done||false);
-    setEditingIdx(idx); setTagsOpen(false);
+    setEditingIdx(idx); setTagsOpen(false); setComposerOpen(true);
     setTimeout(()=>{ inputRef.current?.focus(); inputRef.current?.select(); },0);
   }
 
   function removeCard(idx) {
     const updated = notes.filter((_,i)=>i!==idx);
     setNotes(updated);
-    if(editingIdx===idx){ setEditingIdx(null); setText(""); }
+    if(editingIdx===idx){
+      if(updated.length===0) {
+        // No notes left — hide composer, show only "+ NEW NOTE"
+        setEditingIdx(null); setText(""); setComposerOpen(false);
+      } else {
+        // Select the previous note (or first if we deleted index 0)
+        const nextIdx = Math.min(idx, updated.length - 1);
+        const next = updated[nextIdx];
+        setEditingIdx(nextIdx);
+        setText(next.text); setStage(next.stage||"discovery");
+        setPriority(next.priority||""); setDone(next.done||false);
+        setTimeout(()=>{ inputRef.current?.focus(); inputRef.current?.select(); },0);
+      }
+    }
     else if(editingIdx!==null && idx<editingIdx) setEditingIdx(i=>i-1);
   }
 
@@ -794,12 +683,54 @@ function DayFocusOverlay({ dateKey, initialIdx=null, notes: initNotes, deadlines
 
   function handleKey(e) {
     if(e.key==="Escape"){ e.preventDefault(); handleClose(); }
+    if(e.key==="Enter" && !e.shiftKey){
+      e.preventDefault();
+      if(!text.trim()) return;
+      // Save current note, then advance to next card or open new composer
+      flushCurrent(false);
+      if(editingIdx !== null && editingIdx < notes.length - 1) {
+        // Move to the next card on the right
+        const nextIdx = editingIdx + 1;
+        const next = notes[nextIdx];
+        setEditingIdx(nextIdx);
+        setText(next.text); setStage(next.stage||"discovery");
+        setPriority(next.priority||""); setDone(next.done||false);
+      } else {
+        // On last card or new note — open fresh composer
+        setText(""); setStage("discovery"); setPriority(""); setDone(false);
+        setEditingIdx(null); setComposerOpen(true);
+      }
+      setTimeout(()=>{ inputRef.current?.focus(); inputRef.current?.select(); },0);
+    }
     if(e.key==="Tab"){
       e.preventDefault();
-      const next = e.shiftKey
-        ? (stageIndex-1+STAGES.length)%STAGES.length
-        : (stageIndex+1)%STAGES.length;
-      setStage(STAGES[next].id);
+      if(!text.trim() && editingIdx===null) { /* empty new note — ignore */ return; }
+      flushCurrent(false);
+      if(e.shiftKey) {
+        // Shift+Tab — go to previous card
+        if(editingIdx !== null && editingIdx > 0) {
+          const prevIdx = editingIdx - 1;
+          const prev = notes[prevIdx];
+          setEditingIdx(prevIdx);
+          setText(prev.text); setStage(prev.stage||"discovery");
+          setPriority(prev.priority||""); setDone(prev.done||false);
+        }
+        // If on first card or new note, do nothing
+      } else {
+        // Tab — go to next card, or open new composer if on last
+        if(editingIdx !== null && editingIdx < notes.length - 1) {
+          const nextIdx = editingIdx + 1;
+          const next = notes[nextIdx];
+          setEditingIdx(nextIdx);
+          setText(next.text); setStage(next.stage||"discovery");
+          setPriority(next.priority||""); setDone(next.done||false);
+        } else if(editingIdx !== null) {
+          // On last card — open new composer
+          setText(""); setStage("discovery"); setPriority(""); setDone(false);
+          setEditingIdx(null); setComposerOpen(true);
+        }
+      }
+      setTimeout(()=>{ inputRef.current?.focus(); inputRef.current?.select(); },0);
     }
   }
 
@@ -900,60 +831,15 @@ function DayFocusOverlay({ dateKey, initialIdx=null, notes: initNotes, deadlines
                   boxShadow:"0 0 8px rgba(255,110,180,0.7),0 0 16px rgba(255,110,180,0.35)"}}/>
               )}
 
-              <div
+              <FocusCard
+                note={note}
+                isEditing={isEditing}
+                ejecting={ejecting}
+                showDone
                 onClick={()=>openCard(ni)}
-                style={{
-                  ...darkCard(gStage.color),
-                  borderRadius:"2px",padding:"10px 12px",
-                  width:"130px",minHeight:"80px",
-                  boxShadow: isEditing
-                    ? `0 0 0 2px #fff, 0 0 0 4px ${gStage.color}99, 0 8px 24px rgba(0,0,0,0.55)`
-                    : `0 0 0 1px ${gStage.color}44, 0 8px 24px rgba(0,0,0,0.55)`,
-                  transform:`rotate(${rot}deg)`,
-                  cursor:"pointer",fontFamily:T.body,fontSize:T.t1,
-                  color: note.done ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.8)",
-                  lineHeight:1.4,userSelect:"none",position:"relative",
-                  textDecoration: note.done ? "line-through" : "none",
-                  transition:"box-shadow 0.15s, opacity 0.15s",
-                  opacity: ejecting ? 0 : 1,
-                }}>
-                <div style={{position:"absolute",inset:0,borderRadius:"2px",pointerEvents:"none",
-                  background:`radial-gradient(ellipse 80% 70% at 50% 40%, ${gStage.color}18 0%, transparent 65%)`}}/>
-                <div style={{position:"absolute",inset:0,borderRadius:"2px",pointerEvents:"none",
-                  boxShadow:"inset 0 0 0 1px rgba(255,255,255,0.06),inset 0 1px 0 rgba(255,255,255,0.12)"}}/>
-                {/* ✓ done — top-left */}
-                <button onClick={e=>{e.stopPropagation();toggleCardDone(ni);}}
-                  style={{position:"absolute",top:"-6px",left:"-6px",width:"16px",height:"16px",
-                    borderRadius:"50%",
-                    background: note.done ? "rgba(95,224,192,0.85)" : "rgba(14,12,26,0.9)",
-                    border:`1px solid ${note.done ? "rgba(95,224,192,0.8)" : "rgba(255,255,255,0.12)"}`,
-                    color: note.done ? "#fff" : "rgba(255,255,255,0.28)",
-                    fontSize:T.t3,cursor:"pointer",
-                    display:"flex",alignItems:"center",justifyContent:"center",
-                    padding:0,lineHeight:1,zIndex:2,transition:"background 0.15s,border-color 0.15s"}}
-                  title={note.done ? "Mark undone" : "Mark done"}>
-                  ✓
-                </button>
-                {/* ✕ remove — top-right */}
-                <button onClick={e=>{e.stopPropagation();removeCard(ni);}}
-                  style={{position:"absolute",top:"-6px",right:"-6px",width:"16px",height:"16px",
-                    borderRadius:"50%",background:"rgba(14,12,26,0.9)",border:"1px solid rgba(255,255,255,0.15)",
-                    color:"rgba(255,255,255,0.5)",fontSize:T.t2,cursor:"pointer",
-                    display:"flex",alignItems:"center",justifyContent:"center",
-                    padding:0,lineHeight:1,zIndex:2,transition:"background 0.1s,color 0.1s"}}
-                  onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,92,92,0.7)";e.currentTarget.style.color="#fff";}}
-                  onMouseLeave={e=>{e.currentTarget.style.background="rgba(14,12,26,0.9)";e.currentTarget.style.color="rgba(255,255,255,0.5)";}}>
-                  ✕
-                </button>
-                <div style={{display:"flex",alignItems:"center",gap:"5px",marginBottom:"6px",position:"relative"}}>
-                  <span style={{fontSize:T.t1,lineHeight:1}}>{gStage.icon}</span>
-                  <span style={{fontFamily:T.body,fontSize:T.t4,letterSpacing:"1.4px",textTransform:"uppercase",
-                    color:gStage.color,fontWeight:700}}>{gStage.label}</span>
-                </div>
-                <div style={{position:"relative",fontFamily:T.body,fontSize:T.t1,fontWeight:500,
-                  overflow:"hidden",display:"-webkit-box",WebkitLineClamp:3,
-                  WebkitBoxOrient:"vertical"}}>{note.text}</div>
-              </div>
+                onToggleDone={()=>toggleCardDone(ni)}
+                onRemove={()=>removeCard(ni)}
+              />
             </div>
           );
         })}
@@ -963,7 +849,7 @@ function DayFocusOverlay({ dateKey, initialIdx=null, notes: initNotes, deadlines
           onClick={()=>{
             flushCurrent();
             setText(""); setStage("discovery"); setPriority(""); setDone(false);
-            setEditingIdx(null);
+            setEditingIdx(null); setComposerOpen(true);
             setTimeout(()=>inputRef.current?.focus(),0);
           }}
           style={{
@@ -981,10 +867,11 @@ function DayFocusOverlay({ dateKey, initialIdx=null, notes: initNotes, deadlines
         </div>
       </div>
 
-      {/* Active editor card */}
-      <div onClick={e=>e.stopPropagation()}
-        className="anim-card-up"
-        style={{position:"relative",width:"min(420px,94vw)",marginBottom:"12px"}}>
+      {/* Active editor card — hidden after deleting last note */}
+      {composerOpen && (
+        <div onClick={e=>e.stopPropagation()}
+          className="anim-card-up"
+          style={{position:"relative",width:"min(420px,94vw)",marginBottom:"12px"}}>
         <div style={{
           position:"relative",...darkCard(auraColor),borderRadius:"2px",
           padding:"20px 22px 18px",
@@ -1065,13 +952,16 @@ function DayFocusOverlay({ dateKey, initialIdx=null, notes: initNotes, deadlines
               onDelete={()=>removeCard(editingIdx)}/>
           )}
         </div>
-      </div>
+        </div>
+      )}
 
       {/* ── SAVE button ── */}
-      <div onClick={e=>e.stopPropagation()} className="anim-fade-up"
-        style={{width:"min(420px,94vw)",animationDelay:"0.12s"}}>
-        <CTAButton color={auraColor} onClick={saveAndClose}>SAVE</CTAButton>
-      </div>
+      {composerOpen && (
+        <div onClick={e=>e.stopPropagation()} className="anim-fade-up"
+          style={{width:"min(420px,94vw)",animationDelay:"0.12s"}}>
+          <CTAButton color={auraColor} onClick={saveAndClose}>SAVE{notes.length > 0 ? ` (${notes.length})` : ""}</CTAButton>
+        </div>
+      )}
     </div>
   );
 }
@@ -1211,6 +1101,21 @@ export default function StudioWall() {
   const [importText,    setImportText]    = useState("");
   const [copyLabel,     setCopyLabel]     = useState("COPY");
 
+  // Command palette
+  const [cmdPalette, setCmdPalette] = useState(false);
+
+  // Cmd+K / Ctrl+K to open command palette
+  useEffect(() => {
+    function handleGlobalKey(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setCmdPalette(open => !open);
+      }
+    }
+    window.addEventListener("keydown", handleGlobalKey);
+    return () => window.removeEventListener("keydown", handleGlobalKey);
+  }, []);
+
   // Selection state — tap-to-select, tap-day-to-place (works on mobile)
   const [sel, setSel] = useState(null);
 
@@ -1294,7 +1199,12 @@ export default function StudioWall() {
     const t=dragging.current?.type;
     if(t==="note"||t==="inbox") setDragOver(key);
   }
-  function dOver(e,key) { e.preventDefault(); } // just keep drop alive, no state
+  function dOver(e,key) {
+    e.preventDefault();
+    // Re-assert highlight — covers case where cursor moves from child to empty cell area
+    const t = dragging.current?.type;
+    if ((t==="note"||t==="inbox") && dragOver!==key) setDragOver(key);
+  }
   function dLeave(e)    {
     // Only clear when truly leaving the cell (not moving to a child)
     if(!e.currentTarget.contains(e.relatedTarget)) {
@@ -1343,6 +1253,24 @@ export default function StudioWall() {
     const dayNotes   = notes[key]||[];
     const isDragOver = dragOver===key;
     const isHov      = hovDay===key;
+    // Weekend detection for surface hierarchy
+    const [ky,km,kd] = key.split("-").map(Number);
+    const dayOfWeek  = new Date(ky,km-1,kd).getDay();
+    const isWeekend  = dayOfWeek===0 || dayOfWeek===6;
+    const hasNotes   = dayNotes.length > 0;
+
+    // Surface lightness hierarchy: today > occupied > default > weekend
+    const cellBg = isDragOver
+      ? "rgba(255,110,180,0.12)"
+      : isToday
+      ? "rgba(255,229,102,0.06)"
+      : isHov
+      ? "rgba(255,255,255,0.04)"
+      : hasNotes
+      ? "rgba(14,12,26,0.88)"
+      : isWeekend
+      ? "rgba(6,5,14,0.95)"
+      : "rgba(14,12,26,0.92)";
 
     return (
       <div
@@ -1361,11 +1289,7 @@ export default function StudioWall() {
           flex:1,
           padding:"5px 4px 6px",
           position:"relative",
-          background: isDragOver
-            ? "rgba(255,110,180,0.12)"
-            : isToday
-            ? "rgba(255,229,102,0.05)"
-            : "rgba(14,12,26,0.92)",
+          background: cellBg,
           border: isDragOver
             ? "2px solid #FF6EB4"
             : isSelecting
@@ -1375,7 +1299,7 @@ export default function StudioWall() {
             : "1px solid rgba(255,255,255,0.042)",
           borderRadius:"0",
           cursor: isSelecting ? "cell" : "default",
-          transition:"background 0.1s, border 0.1s",
+          transition:"background 0.15s, border 0.1s",
         }}
       >
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"4px",overflow:"visible"}}>
@@ -1534,14 +1458,18 @@ export default function StudioWall() {
           )}
         </div>
 
-        {isHov&&!isSelecting&&(
+        {/* Always rendered to reserve height — opacity-hidden when not hovered */}
+        {!isSelecting&&(
           <button onClick={e=>{e.stopPropagation();setExpandedDay({key,noteIdx:"new"});}}
             className="add-note-btn"
             style={{marginTop:"4px",width:"100%",background:"rgba(255,255,255,0.03)",
               border:"1px dashed rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.22)",
               borderRadius:"0",fontFamily:T.body,fontSize:T.t2,
               padding:"2px 4px",cursor:"pointer",textAlign:"left",
-              transition:"all 0.15s"}}>
+              transition:"all 0.15s",
+              opacity: isHov ? 1 : 0,
+              pointerEvents: isHov ? "auto" : "none",
+            }}>
             + note
           </button>
         )}
@@ -1549,11 +1477,27 @@ export default function StudioWall() {
     );
   }
 
-  // ── LOADING ──────────────────────────────────────────────────────────────
+  // ── LOADING SKELETON ────────────────────────────────────────────────────
   if(!sbLoaded || !notes || !deadlines || !inbox) return (
-    <div style={{minHeight:"100vh",background:"#0e0e12",display:"flex",alignItems:"center",
-      justifyContent:"center",fontFamily:"'Archivo Black',sans-serif",color:"rgba(255,255,255,0.3)",fontSize:14}}>
-      Loading&hellip;
+    <div style={{minHeight:"100vh",background:"#080810",display:"flex",flexDirection:"column",
+      alignItems:"center",justifyContent:"center",gap:"16px"}}>
+      <div style={{
+        fontFamily:T.body,fontSize:"clamp(28px,4vw,48px)",fontStyle:"italic",fontWeight:700,
+        background:RAINBOW,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+        opacity:0.4,animation:"pulse 2s ease infinite",
+      }}>Studio Wall</div>
+      <div style={{display:"flex",gap:"8px"}}>
+        {[0,1,2].map(i=>(
+          <div key={i} style={{
+            width:"80px",height:"48px",borderRadius:"2px",
+            background:"rgba(255,255,255,0.03)",
+            border:"1px solid rgba(255,255,255,0.04)",
+            animation:`pulse 2s ease ${i*0.3}s infinite`,
+          }}/>
+        ))}
+      </div>
+      <div style={{fontFamily:T.display,fontSize:T.t2,letterSpacing:"3px",
+        color:"rgba(255,255,255,0.12)",marginTop:"8px"}}>LOADING</div>
     </div>
   );
 
@@ -1566,13 +1510,23 @@ export default function StudioWall() {
         ::-webkit-scrollbar{height:4px;width:4px;}
         ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);}
 
-        body::before{
-          content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-          background:
-            radial-gradient(ellipse 60% 50% at 15% 15%, rgba(95,224,192,0.08) 0%, transparent 70%),
-            radial-gradient(ellipse 50% 60% at 85% 20%, rgba(168,126,250,0.08) 0%, transparent 70%),
-            radial-gradient(ellipse 55% 45% at 50% 88%, rgba(255,110,180,0.06) 0%, transparent 70%),
-            radial-gradient(ellipse 40% 50% at 78% 75%, rgba(92,200,255,0.05) 0%, transparent 65%);
+        @keyframes orbDrift1{
+          0%,100%{transform:translate(0,0) scale(1);}
+          33%{transform:translate(30px,-20px) scale(1.05);}
+          66%{transform:translate(-15px,25px) scale(0.97);}
+        }
+        @keyframes orbDrift2{
+          0%,100%{transform:translate(0,0) scale(1);}
+          40%{transform:translate(-25px,15px) scale(1.03);}
+          80%{transform:translate(20px,-30px) scale(0.98);}
+        }
+        @keyframes orbDrift3{
+          0%,100%{transform:translate(0,0) scale(1);}
+          50%{transform:translate(15px,20px) scale(1.04);}
+        }
+        .ambient-orb{
+          position:fixed;pointer-events:none;z-index:0;border-radius:50%;
+          will-change:transform;
         }
 
         /* ── Pills ── */
@@ -1699,6 +1653,23 @@ export default function StudioWall() {
         [draggable]:active{cursor:grabbing;}
       `}</style>
 
+      {/* Ambient orbs — slow drifting color blobs behind content */}
+      <div className="ambient-orb" style={{
+        top:"-10%",left:"-5%",width:"60vw",height:"50vh",
+        background:"radial-gradient(ellipse at center, rgba(95,224,192,0.07) 0%, transparent 70%)",
+        animation:"orbDrift1 25s ease-in-out infinite",
+      }}/>
+      <div className="ambient-orb" style={{
+        top:"-5%",right:"-10%",width:"50vw",height:"60vh",
+        background:"radial-gradient(ellipse at center, rgba(168,126,250,0.07) 0%, transparent 70%)",
+        animation:"orbDrift2 30s ease-in-out infinite",
+      }}/>
+      <div className="ambient-orb" style={{
+        bottom:"-10%",left:"30%",width:"55vw",height:"45vh",
+        background:"radial-gradient(ellipse at center, rgba(255,110,180,0.05) 0%, transparent 70%)",
+        animation:"orbDrift3 35s ease-in-out infinite",
+      }}/>
+
       {isSelecting && (
         <div className="sel-banner" style={{position:"fixed",top:0,left:0,right:0,zIndex:8500,
           display:"flex",alignItems:"center",justifyContent:"center",gap:"12px"}}>
@@ -1721,9 +1692,7 @@ export default function StudioWall() {
       )}
 
       {/* NAV */}
-      <div style={{position:"relative",zIndex:10,background:"rgba(14,12,26,0.95)",
-        borderBottom:"1px solid rgba(255,255,255,0.07)",padding:"20px 28px 16px",
-        backdropFilter:"blur(24px)"}}>
+      <div style={{position:"relative",zIndex:10,...GLASS.nav,padding:"20px 28px 16px"}}>
 
         {/* Row 1 — wordmark */}
         <div style={{marginBottom:"16px"}}>
@@ -1739,10 +1708,10 @@ export default function StudioWall() {
         {/* Row 2 — month nav left, view + today right */}
         <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
 
-          {/* Month title + nav arrows */}
-          <button className="pill" style={{padding:"6px 10px"}} onClick={()=>{if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1);}}>‹</button>
+          {/* Month title + nav arrows — title left-aligned, arrows after */}
           <span style={{fontFamily:T.body,fontWeight:700,fontSize:"22px",letterSpacing:"0.2px",
-            color:"rgba(255,255,255,0.88)",minWidth:"150px"}}>{MONTHS[month]} {year}</span>
+            color:"rgba(255,255,255,0.88)"}}>{MONTHS[month]} {year}</span>
+          <button className="pill" style={{padding:"6px 10px"}} onClick={()=>{if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1);}}>‹</button>
           <button className="pill" style={{padding:"6px 10px"}} onClick={()=>{if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1);}}>›</button>
 
           <div style={{flex:1}}/>
@@ -1754,26 +1723,25 @@ export default function StudioWall() {
           </div>
           <button className="pill" onClick={()=>{setYear(TODAY.getFullYear());setMonth(TODAY.getMonth());}}
             style={{marginLeft:"6px"}}>Today</button>
+          <button onClick={()=>setCmdPalette(true)}
+            title="Commands (⌘K)"
+            style={{marginLeft:"6px",background:"rgba(255,255,255,0.06)",
+              border:"1px solid rgba(255,255,255,0.09)",
+              width:"32px",height:"32px",borderRadius:"0",cursor:"pointer",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              color:"rgba(255,255,255,0.4)",fontSize:"16px",letterSpacing:"2px",
+              transition:"background 0.15s, color 0.15s",
+            }}
+            onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.12)";e.currentTarget.style.color="rgba(255,255,255,0.7)";}}
+            onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.color="rgba(255,255,255,0.4)";}}>
+            ⋮
+          </button>
         </div>
       </div>
 
-      {/* Export / Import — fixed bottom-right */}
-      <div style={{position:"fixed",bottom:"20px",right:"20px",zIndex:200,display:"flex",gap:"6px"}}>
-        <button className="pill" onClick={()=>setBackupModal("export")}
-          style={{borderColor:"rgba(95,224,192,0.25)",color:"rgba(95,224,192,0.55)",
-            background:"rgba(14,12,26,0.9)",backdropFilter:"blur(12px)"}}>↓ Export</button>
-        <button className="pill" onClick={()=>{ setBackupModal("import"); setImportText(""); setCopyLabel("COPY"); }}
-          style={{borderColor:"rgba(168,126,250,0.25)",color:"rgba(168,126,250,0.55)",
-            background:"rgba(14,12,26,0.9)",backdropFilter:"blur(12px)"}}>↑ Import</button>
-        <button className="pill" onClick={()=>supabase.auth.signOut()}
-          style={{borderColor:"rgba(255,92,92,0.25)",color:"rgba(255,92,92,0.55)",
-            background:"rgba(14,12,26,0.9)",backdropFilter:"blur(12px)"}}>Sign out</button>
-      </div>
 
       {/* INBOX */}
-      <div style={{position:"relative",zIndex:9,background:"rgba(14,12,26,0.8)",
-        borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"12px 14px",
-        backdropFilter:"blur(16px)"}}>
+      <div style={{position:"relative",zIndex:9,...GLASS.inbox,padding:"12px 14px"}}>
         <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
           <div style={{fontFamily:T.display,fontSize:T.t1,letterSpacing:"3.5px",
             color:"rgba(255,255,255,0.3)"}}>INBOX</div>
@@ -1823,16 +1791,29 @@ export default function StudioWall() {
             cursor: "default",
             background: inboxDragOver ? "rgba(255,110,180,0.06)" : "transparent"}}
           onMouseEnter={()=>setHovInbox(true)}
-          onMouseLeave={()=>setHovInbox(false)}
-          onClick={()=>setInboxModal(true)}>
+          onMouseLeave={()=>setHovInbox(false)}>
           {inbox.length===0 && (
-            <div onClick={()=>setInboxModal(true)} style={{cursor:"pointer",color: hovInbox ? "rgba(255,110,180,0.6)" : "rgba(255,255,255,0.14)",
-              fontSize:T.t1,padding:"14px 0",fontFamily: hovInbox ? T.display : T.body,
-              fontStyle: hovInbox ? "normal" : "italic",
-              letterSpacing: hovInbox ? "2px" : "0",
-              textTransform: hovInbox ? "uppercase" : "none",
-              transition:"all 0.15s"}}>
-              {hovInbox ? "+ NOTE" : "inbox empty — add a pack or a note"}
+            <div onClick={()=>setInboxModal(true)}
+              style={{cursor:"pointer",display:"flex",alignItems:"center",gap:"12px",
+                padding:"16px 0",transition:"all 0.15s"}}>
+              <div style={{
+                width:"48px",height:"48px",borderRadius:"2px",
+                border: hovInbox ? "1.5px dashed rgba(255,110,180,0.5)" : "1.5px dashed rgba(255,255,255,0.08)",
+                display:"flex",alignItems:"center",justifyContent:"center",
+                fontSize:"20px",color: hovInbox ? "rgba(255,110,180,0.7)" : "rgba(255,255,255,0.12)",
+                transition:"all 0.15s",flexShrink:0,
+              }}>+</div>
+              <div>
+                <div style={{fontFamily:T.body,fontSize:T.t1,fontWeight:600,
+                  color: hovInbox ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.15)",
+                  transition:"color 0.15s"}}>
+                  {hovInbox ? "Add a note" : "Inbox empty"}
+                </div>
+                <div style={{fontFamily:T.body,fontSize:T.t3,
+                  color:"rgba(255,255,255,0.08)",marginTop:"2px"}}>
+                  Press N or click to add &middot; ⌘K for commands
+                </div>
+              </div>
             </div>
           )}
           {inbox.map((item,i)=>{
@@ -2075,6 +2056,39 @@ export default function StudioWall() {
           onToggleDone={()=>{}}
           onClose={()=>setEditInboxItem(null)}/>
       )}
+      {/* COMMAND PALETTE */}
+      {cmdPalette && (
+        <CommandPalette
+          onClose={() => setCmdPalette(false)}
+          actions={[
+            { id: "new-note", label: "New inbox note", icon: "✏️", shortcut: "N",
+              keywords: ["add", "create", "write"],
+              action: () => setInboxModal(true) },
+            { id: "templates", label: "Template packs", icon: "📦", shortcut: "T",
+              keywords: ["pack", "sprint", "research"],
+              action: () => setShowTemplates(true) },
+            { id: "today", label: "Go to today", icon: "📍", shortcut: ".",
+              keywords: ["jump", "now", "current"],
+              action: () => { setYear(TODAY.getFullYear()); setMonth(TODAY.getMonth()); } },
+            { id: "month-view", label: "Month view", icon: "📅",
+              keywords: ["calendar", "grid"],
+              action: () => setView("month") },
+            { id: "week-view", label: "Week view", icon: "📋",
+              keywords: ["weekly"],
+              action: () => setView("week") },
+            { id: "export", label: "Export backup", icon: "↓",
+              keywords: ["save", "download", "json"],
+              action: () => setBackupModal("export") },
+            { id: "import", label: "Import backup", icon: "↑",
+              keywords: ["restore", "upload", "json"],
+              action: () => { setBackupModal("import"); setImportText(""); setCopyLabel("COPY"); } },
+            { id: "signout", label: "Sign out", icon: "🚪",
+              keywords: ["logout", "exit"],
+              action: () => supabase.auth.signOut() },
+          ]}
+        />
+      )}
+
       {/* BACKUP MODAL */}
       {backupModal && (
         <ModalShell onClose={()=>setBackupModal(null)} zIndex={9900} width="min(560px,96vw)">
